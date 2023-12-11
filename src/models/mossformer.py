@@ -99,8 +99,19 @@ class MossFormerBlock(nn.Module):
         query_key_dim = 128,
         hidden_dim = 128,
         expansion_factor = 2.,
-        dropout = 0.,
+        dropout = 0.1,
     ):
+        """
+        MossFormerBlock is a module that represents a single block of the MossFormer model.
+        
+        Args:
+            dim (int): The input dimension of the block.
+            group_size (int, optional): The size of the groups used for quadratic attention. Defaults to 256.
+            query_key_dim (int, optional): The dimension of the query and key vectors. Defaults to 128.
+            hidden_dim (int, optional): The dimension of the hidden layer. Defaults to 128.
+            expansion_factor (float, optional): The expansion factor for the hidden dimension. Defaults to 2.0.
+            dropout (float, optional): The dropout rate. Defaults to 0.1.
+        """
         super().__init__()
         self.group_size = group_size
         hidden_dim = int(dim * expansion_factor)
@@ -108,7 +119,7 @@ class MossFormerBlock(nn.Module):
         self.attn_fn = ReLUSquared()
         self.rotary_pos_emb = RotaryEmbedding(dim = query_key_dim)
         self.dropout = nn.Dropout(dropout)
-        
+
         self.to_u = ConvolutionModule(
             in_dim=dim,
             out_dim=hidden_dim,
@@ -137,7 +148,15 @@ class MossFormerBlock(nn.Module):
         self,
         x: torch.Tensor,
     ):
+        """
+        Forward pass of the MossFormerBlock.
         
+        Args:
+            x (torch.Tensor): The input tensor with shape [B, T, C].
+        
+        Returns:
+            torch.Tensor: The output tensorwith shape[B, T, C].
+        """
         seq_len, group_size = x.shape[-2], self.group_size
 
         # initial projection
@@ -203,6 +222,18 @@ class MossFormer(nn.Module):
                  MFB_num:int=4,
                  drop_out_rate:float=0.1,
                  ) -> None:
+        """
+        MossFormer model implementation.
+
+        Args:
+            in_dim (int): Number of input dimensions. Default is 1.
+            hidden_dim (int): Dimension of hidden layers. Default is 512.
+            kernel_size (int): Size of the convolutional kernel. Default is 8.
+            stride (int): Stride value for the convolutional layers. Default is 4.
+            speaker_num (int): Number of speakers. Default is 4.
+            MFB_num (int): Number of MossFormer blocks. Default is 4.
+            drop_out_rate (float): Dropout rate. Default is 0.1.
+        """
         super().__init__()
         self.speaker_num = speaker_num
         self.MFB_num = MFB_num
@@ -238,6 +269,15 @@ class MossFormer(nn.Module):
                                            stride=stride)
 
     def forward(self, x:torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the MossFormer model.
+
+        Args:
+            x (torch.Tensor): Input tensor with shape [B, 1, T].
+
+        Returns:
+            torch.Tensor: Output tensor with shape [BxC, 1, T].
+        """
         in_len = x.shape[-1]
         x_in = self.in_conv(x)
         
