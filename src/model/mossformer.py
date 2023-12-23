@@ -276,7 +276,7 @@ class MossFormer(nn.Module):
             x (torch.Tensor): Input tensor with shape [B, 1, T].
 
         Returns:
-            torch.Tensor: Output tensor with shape [BxC, 1, T].
+            torch.Tensor: Output tensor with shape [B, C, T].
         """
         in_len = x.shape[-1]
         x_in = self.in_conv(x)
