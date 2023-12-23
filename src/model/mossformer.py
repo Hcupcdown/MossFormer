@@ -219,7 +219,7 @@ class MossFormer(nn.Module):
                  kernel_size:int=8,
                  stride:int=4,
                  speaker_num:int=4,
-                 MFB_num:int=4,
+                 MFB_num:int=8,
                  drop_out_rate:float=0.1,
                  ) -> None:
         """
@@ -299,7 +299,8 @@ class MossFormer(nn.Module):
         x_split = self.glu(x_split)
         mask = self.out_point_wise_conv(x_split)
         x_in = x_in.repeat_interleave(self.speaker_num, dim = 0)
-        split_sound =  self.out_conv(mask * x_in)[...,:in_len]
+        split_sound = self.out_conv(mask * x_in)[...,:in_len]
+        split_sound = rearrange(split_sound, '(b c) n s -> b (c n) s', c=self.speaker_num)
         return split_sound
 
 
