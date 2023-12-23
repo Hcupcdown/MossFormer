@@ -33,7 +33,7 @@ def main():
                                    collate_fn=collate_fn)
          
         val_dataset   = LibriMixDataset(args.dataset['val'],
-                                     sample_rate= args.setting['sample_rate'])
+                                        sample_rate= args.setting['sample_rate'])
         
         val_loader    = DataLoader(val_dataset,
                                    batch_size=1,

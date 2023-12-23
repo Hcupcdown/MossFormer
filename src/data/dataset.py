@@ -61,6 +61,7 @@ class LibriMixDataset(torch.utils.data.Dataset):
         """
         self.dataset_dir = dataset_dir
         self.sample_rate  = sample_rate
+        self.segment = segment
         self.mode = mode
         self.mix_num = mix_num
         self.dynamic_mix = dynamic_mix
@@ -102,6 +103,9 @@ class LibriMixDataset(torch.utils.data.Dataset):
         clean_audio = torch.cat(clean_audio, dim=0)
 
         sound_len = mix_audio.shape[-1]
+        if self.segment is None:
+            return mix_audio, clean_audio
+        
         if sound_len < self.segment:
             mix_audio = F.pad(mix_audio, (0, self.segment - sound_len))
             clean_audio = F.pad(clean_audio, (0, self.segment - sound_len))
