@@ -9,11 +9,11 @@ def get_config():
     parser.add_argument('action', type=str, default='train', help='Action') # train / test
 
     # dataset
-    parser.add_argument('--train', type=str, default=r'F:\LibriMix\Libri2Mix\wav8k\min\train-360', help='Train path')
+    parser.add_argument('--train', type=str, default=r'F:\LibriMix\Libri2Mix\wav8k\min\train-100', help='Train path')
     parser.add_argument('--val', type=str, default=r'F:\LibriMix\Libri2Mix\wav8k\min\dev', help='Val path')
     parser.add_argument('--test', type=str, default=r'F:\LibriMix\Libri2Mix\wav8k\min\test', help='Test path')
     parser.add_argument('--sample_rate', type=int, default=8000, help='Sample rate')
-    parser.add_argument('--segment', type=int, default=2, help='Segment') # segment signal per 2 seconds
+    parser.add_argument('--segment', type=int, default=4, help='Segment') # segment signal per 2 seconds
 
     #basic 
     parser.add_argument('--model_path', type=str, default='log/23-12-12-17-03-58/model/temp_train.pth', help='Model path')

@@ -11,43 +11,28 @@ from torch.nn import functional as F
 class AudioDataset(torch.utils.data.Dataset):
 
     def __init__(self,
-                     dataset_dir,
-                     dataset_list,
-                     segment=None,
-                     sample_rate=8000):
+                 dataset_dir,
+                 dataset_list,
+                 sample_rate=8000):
             """
             Initialize the Dataset object.
 
             Args:
                 dataset_dir (str): The directory path of the dataset.
                 dataset_list (list): The list of dataset files.
-                segment (float, optional): The segment length in seconds. Defaults to None.
                 sample_rate (int, optional): The sample rate of the audio files. Defaults to 8000.
             """
             self.dataset_dir = dataset_dir
             self.dataset_list = dataset_list
             self.sample_rate  = sample_rate
-            self.segment = segment
-            if segment is not None:
-                self.segment = int(segment  * sample_rate)
         
     def __getitem__(self, index):
-        
+
         file_path = os.path.join(self.dataset_dir, self.dataset_list[index])
         audio, sr  = torchaudio.load(file_path)
 
         if sr != self.sample_rate:
             raise ValueError(f"Invalid sample rate: expected {self.sample_rate}, got {sr}")
-        
-        if self.segment is None:
-            return audio
-
-        sound_len = audio.shape[-1]
-        if sound_len < self.segment:
-            audio = F.pad(audio, (0, self.segment - sound_len))
-        else:
-            offset = random.randint(0, sound_len - self.segment)
-            audio = audio[..., offset : offset+self.segment]
         return audio
     
     def __len__(self):
@@ -76,10 +61,11 @@ class LibriMixDataset(torch.utils.data.Dataset):
         """
         self.dataset_dir = dataset_dir
         self.sample_rate  = sample_rate
-        self.segment = segment
         self.mode = mode
         self.mix_num = mix_num
         self.dynamic_mix = dynamic_mix
+        if segment is not None:
+            self.segment = int(segment * self.sample_rate)
 
         if dynamic_mix:
             self._gen_data_list_dynamic()
@@ -98,7 +84,6 @@ class LibriMixDataset(torch.utils.data.Dataset):
         dataset_list.sort()
         self.mix_dataset = AudioDataset(dataset_dir=mix_dir,
                                         dataset_list=dataset_list,
-                                        segment=self.segment,
                                         sample_rate=self.sample_rate)
         
         self.gt_datasets = []
@@ -106,17 +91,26 @@ class LibriMixDataset(torch.utils.data.Dataset):
             gt_dir = os.path.join(self.dataset_dir, f"s{i+1}")
             self.gt_datasets.append(AudioDataset(dataset_dir=gt_dir,
                                                  dataset_list=dataset_list,
-                                                 segment=self.segment,
                                                  sample_rate=self.sample_rate))
     
     def _getitem_static(self, index):
 
         mix_audio = self.mix_dataset[index]
-        clean_out = []
+        clean_audio = []
         for i in range(self.mix_num):
-            clean_out.append(self.gt_datasets[i][index])
-        
-        return mix_audio, torch.cat(clean_out, dim=0)
+            clean_audio.append(self.gt_datasets[i][index])
+        clean_audio = torch.cat(clean_audio, dim=0)
+
+        sound_len = mix_audio.shape[-1]
+        if sound_len < self.segment:
+            mix_audio = F.pad(mix_audio, (0, self.segment - sound_len))
+            clean_audio = F.pad(clean_audio, (0, self.segment - sound_len))
+        else:
+            offset = random.randint(0, sound_len - self.segment)
+            mix_audio = mix_audio[..., offset : offset+self.segment]
+            clean_audio = clean_audio[..., offset : offset+self.segment]
+
+        return mix_audio, clean_audio
 
     def _getitem_dynamic(self, index):
         
